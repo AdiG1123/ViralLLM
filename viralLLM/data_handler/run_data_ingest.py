@@ -1,27 +1,28 @@
 from data_ingestion import ESearchAPI, EFetchAPI
 from xml.etree import ElementTree
+import logging
 
-def write_binary_to_file(file_type: str, file_name: str, file_string: str):
-    with open(f"{file_name}.{file_type}", "wb") as f:
-        f.write(file_string)
+logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     
+    # Change these search terms to download data with that keyword
     search_terms = {
-        "abstract" : "measles"
+        "abstract" : "P protein",
+        "title" : "Measles"
     }
     
-    # esearch_pubmed = ESearchAPI(db="pubmed")
+    # Esearch component
     esearch_pmc = ESearchAPI(db="pmc")
 
-    # response_pubmed = esearch_pubmed.get_id_list(search_terms=search_terms)
     response_pmc = esearch_pmc.get_webenv_info(search_terms=search_terms)
 
+    # Efetch component
     efetch = EFetchAPI()
 
     for x in efetch.get_xml(webenv_info=response_pmc):
         
-        print(x)
+        # find all articles
         articles = x.findall('.//article')
         
         for index, article_element in enumerate(articles, start=1):
@@ -41,4 +42,4 @@ if __name__ == "__main__":
             new_file_path = f'database/{pmc_id}.xml'
             new_tree.write(new_file_path, encoding='utf-8', xml_declaration=True)
 
-            print(f'Article {index} saved to {new_file_path}')
+            logger.info(f'Article {index} saved to {new_file_path}')
