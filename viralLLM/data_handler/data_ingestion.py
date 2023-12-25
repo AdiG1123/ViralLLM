@@ -63,23 +63,30 @@ class ESearchAPI:
         }
         
         res = requests.get(url=url, params=params)
-        logger.info(f"{self.db} ---- {res.json()}")
+
         return res.json()
     
    
     def get_webenv_info(self, search_terms: dict):
-       """
-       Get the list of article Ids returned from the API
-       """
-       self._set_search_term(search_terms=search_terms)
-       response = self._get_response()
-       
-       return {
+        """
+        Get the list of article Ids returned from the API
+        """
+        
+        logger.info("Started Esearch")
+        
+        self._set_search_term(search_terms=search_terms)
+        response = self._get_response()
+        ret = {
             "db" : self.db,
             "count": response['esearchresult']['count'],
             "querykey": response['esearchresult']['querykey'],
             "webenv" : response['esearchresult']['webenv']
                 }
+        
+        logger.info(ret)
+        logger.info("Esearch Complete")
+       
+        return ret
 
 
 class EFetchAPI:
@@ -94,11 +101,17 @@ class EFetchAPI:
             logger.info("No API Key Found")
         
         # the max amount of entries acquired in single api call
-        self.retmax = 5
+        # All params are inputted as strings
+        self.retmax = "10"
+        self.retmax_int = int(self.retmax)
         
         self.db = str()
         self.webenv = str()
         self.query_key = str()
+        
+        self.usehistory = 'y'
+        
+        # the count is the total ids from the Esearch
         self.count = 0
         
     def _parse_webenv(self, webenv_info: dict):
@@ -110,7 +123,7 @@ class EFetchAPI:
         except:
             raise Exception("Invalid web env input. Need keys 'webenv' and 'querykey'")
     
-    def _get_response(self, retstart: int, url=EFETCH_URL):
+    def _get_response(self, retstart: str, url=EFETCH_URL):
         """
         Calls API with parameters
         """
@@ -120,25 +133,37 @@ class EFetchAPI:
             "db" : self.db,
             "api_key" : self.api_key,
             "retmax" : self.retmax,
-            "reststart" : retstart,
+            "retstart" : retstart,
             "WebEnv" : self.webenv,
-            "query_key" : self.query_key
+            "query_key" : self.query_key,
+            "usehistory" : self.usehistory
             }
         
         res = requests.get(url=url, params=params)
+        logger.info(res.status_code)
+        tree_element = ElementTree.fromstring(res.text)
         
-        tree = ElementTree.fromstring(res.text)
+        pmc_id = tree_element.find('.//article-id[@pub-id-type="pmc"]').text
+        logger.info(f"{params}: PMC ID: {pmc_id}")
         
-        logger.info(f"{self.db} ---- {tree}")
-        return tree
+        return tree_element
     
     def get_xml(self, webenv_info: dict):
         """
         Get the list of article Ids returned from the API
         """
+        
+        logger.info("Starting efetch")
+        
         self._parse_webenv(webenv_info=webenv_info)
         
-        for i in range(0, self.count, self.retmax):
-            response = self._get_response(retstart=i)
-            yield response
+        # parse the string params as ints for range
     
+        for i in range(0, self.count, self.retmax_int):
+            response = self._get_response(retstart=str(i))
+            logger.info(f"{i}: {response.find('.//article-id[@pub-id-type="pmc"]').text}")
+            # responses.append(response)
+            yield response
+        logger.info("Efetch complete")
+
+        # return responses
