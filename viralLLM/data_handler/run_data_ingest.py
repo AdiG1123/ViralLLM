@@ -1,6 +1,7 @@
 from data_ingestion import ESearchAPI, EFetchAPI
 from xml.etree import ElementTree
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -11,6 +12,10 @@ if __name__ == "__main__":
         "abstract" : "P protein",
         "title" : "Measles"
     }
+    
+    if not os.path.exists(os.path.join(os.getcwd(), "database")):
+        os.mkdir(os.path.join(os.getcwd(), "database"))
+    
     
     # Esearch component
     esearch_pmc = ESearchAPI(db="pmc")
