@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 BASE_URL = r"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/eutils.ncbi.nlm.nih.gov/entrez/eutils/"
 ESEARCH_URL = f"{BASE_URL}esearch.fcgi"
 EFETCH_URL = f"{BASE_URL}efetch.fcgi"
-DATABASES = ["pmc", "pubmed"]
+DATABASES = ["pmc"]
 API_KEY = os.getenv("API_KEY")
 
 class ESearchAPI:
