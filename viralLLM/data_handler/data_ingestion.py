@@ -3,6 +3,7 @@ import logging
 import os
 from dotenv import load_dotenv
 from xml.etree import ElementTree
+import time
 
 load_dotenv()
 
@@ -64,7 +65,13 @@ class ESearchAPI:
         
         res = requests.get(url=url, params=params)
 
-        return res.json()
+        if res.status_code == 200:
+            return res.json()
+        elif res.status_code == 429:
+            time.sleep(60)
+            return self._get_response()
+        else:
+            raise Exception(f"Esearch failed with code: {res.status_code}")
     
    
     def get_webenv_info(self, search_terms: dict):
@@ -75,7 +82,9 @@ class ESearchAPI:
         logger.info("Started Esearch")
         
         self._set_search_term(search_terms=search_terms)
+        
         response = self._get_response()
+        
         ret = {
             "db" : self.db,
             "count": response['esearchresult']['count'],
@@ -141,13 +150,16 @@ class EFetchAPI:
         
         res = requests.get(url=url, params=params)
         logger.info(res.status_code)
-        tree_element = ElementTree.fromstring(res.text)
-        
-        pmc_id = tree_element.find('.//article-id[@pub-id-type="pmc"]').text
-        logger.info(f"{params}: PMC ID: {pmc_id}")
-        
-        return tree_element
-    
+        if res.status_code == 200:
+            return res.text
+           
+        elif res.status_code == 429: 
+            time.sleep(60)
+            return self._get_response(retstart=retstart)
+        else:
+            raise Exception(f"Efetch failed with code: {res.status_code}")
+            
+
     def get_xml(self, webenv_info: dict):
         """
         Get the list of article Ids returned from the API
@@ -161,9 +173,12 @@ class EFetchAPI:
     
         for i in range(0, self.count, self.retmax_int):
             response = self._get_response(retstart=str(i))
-            logger.info(f"{i}: {response.find('.//article-id[@pub-id-type="pmc"]').text}")
-            # responses.append(response)
-            yield response
+
+            # Convert response to XML element
+            tree_element = ElementTree.fromstring(response)
+                                    
+            logger.info(f"{i}: {tree_element.find('.//article-id[@pub-id-type="pmc"]').text}")
+            yield tree_element
         logger.info("Efetch complete")
 
         # return responses
