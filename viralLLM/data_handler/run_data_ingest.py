@@ -49,7 +49,7 @@ if __name__ == "__main__":
     
     if not os.path.exists(os.path.join(os.getcwd(), "database")):
         os.mkdir(os.path.join(os.getcwd(), "database"))
-        
+    logger.info(f"Search terms: {search_terms}")
     ingest(search_terms=search_terms, db="pmc")
     
     
