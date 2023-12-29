@@ -5,20 +5,9 @@ import os
 
 logger = logging.getLogger(__name__)
 
-if __name__ == "__main__":
-    
-    # Change these search terms to download data with that keyword
-    search_terms = {
-        "abstract" : "P protein",
-        "title" : "Measles"
-    }
-    
-    if not os.path.exists(os.path.join(os.getcwd(), "database")):
-        os.mkdir(os.path.join(os.getcwd(), "database"))
-    
-    
+def ingest(search_terms: dict, db: str):
     # Esearch component
-    esearch_pmc = ESearchAPI(db="pmc")
+    esearch_pmc = ESearchAPI(db=db)
 
     response_pmc = esearch_pmc.get_webenv_info(search_terms=search_terms)
 
@@ -48,3 +37,20 @@ if __name__ == "__main__":
             new_tree.write(new_file_path, encoding='utf-8', xml_declaration=True)
 
             logger.info(f'Article {index} saved to {new_file_path}')
+
+
+if __name__ == "__main__":
+    
+    # Change these search terms to download data with that keyword
+    search_terms = {
+        "abstract" : "P protein",
+        "title" : "Measles"
+    }
+    
+    if not os.path.exists(os.path.join(os.getcwd(), "database")):
+        os.mkdir(os.path.join(os.getcwd(), "database"))
+        
+    ingest(search_terms=search_terms, db="pmc")
+    
+    
+    
